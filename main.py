@@ -1,8 +1,12 @@
 # %%
+from random import choice as randchoice
+
 import pygame
-from game import Game
+
 from agents import Archer, Warrior
+from game import Game
 from rl_algorithms import PolicyIteration
+
 
 def main():
     pygame.init()
@@ -11,8 +15,12 @@ def main():
     game = Game()
 
     # Setup players with one archer and one warrior each
+
+    # Player 1 pieces 
     a1 = Archer(1, (0, 0))
     w1 = Warrior(1, (1, 0))
+    
+    # Player 2 pieces
     a2 = Archer(2, (7, 7))
     w2 = Warrior(2, (6, 7))
 
@@ -27,13 +35,12 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
-        # Dummy player actions for now (just first possible action)
-        player_actions = {
-            1: {a1: a1.possible_actions(game)[0], w1: w1.possible_actions(game)[0]},
-            2: {a2: a2.possible_actions(game)[0], w2: w2.possible_actions(game)[0]},
-        }
+        action = randchoice(a1.possible_actions(game) + w1.possible_actions(game))
+        game.resolve_turn(action)
 
-        game.resolve_turn(player_actions)
+        action = randchoice(a2.possible_actions(game) + w2.possible_actions(game))
+        game.resolve_turn(action)
+
         game.render(screen)
         pygame.display.flip()
         clock.tick(2)  # slow down for visualization

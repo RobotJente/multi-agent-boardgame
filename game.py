@@ -1,5 +1,11 @@
+
+# Logic needed for circular imports
+from typing import Tuple
+
 import pygame
-from agents import Archer, Warrior
+
+from agents import Agent, Archer
+
 
 class Game:
     WIDTH = 8
@@ -12,6 +18,9 @@ class Game:
 
     def is_within_bounds(self, x, y):
         return 0 <= x < self.WIDTH and 0 <= y < self.HEIGHT
+    
+    def get_occupied(self, x, y) -> Agent:
+        return self.grid[y][x]
 
     def is_occupied(self, x, y):
         return self.grid[y][x] is not None
@@ -24,6 +33,21 @@ class Game:
         else:
             raise ValueError("Position already occupied")
 
+    def resolve_turn(self, action: Tuple):
+        action_type, target_square, agent = action
+        agent: Agent 
+        
+        # Assume action is legal because we picked it
+        if action_type == 'move':
+            self.grid[agent.position[0]][agent.position[1]] = None
+            agent.move(target_square)
+            self.grid[target_square[0]][target_square[1]] = agent
+
+        elif action_type == 'attack':
+            self.get_occupied(*target_square).take_damage(1)
+
+        self.turn += 1
+
     def move_agent(self, agent, action):
         old_x, old_y = agent.position
         if action[0] == 'move':
@@ -35,16 +59,6 @@ class Game:
         elif action[0] in ('attack', 'shoot'):
             # Add simple attack logic here if needed
             pass
-
-    def resolve_turn(self, player_actions):
-        # player_actions = {player_id: {agent: action, ...}, ...}
-        # For now, just move all agents simultaneously
-        # More advanced conflict resolution can be added later
-        for player_id, actions in player_actions.items():
-            for agent, action in actions.items():
-                self.move_agent(agent, action)
-
-        self.turn += 1
 
     def get_game_state(self):
         # Return any info RL agent might need
