@@ -1,8 +1,10 @@
 # %%
 from __future__ import annotations
 
+import uuid
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Tuple
+from uuid import UUID
 
 import numpy as np
 from numpy.typing import NDArray
@@ -11,15 +13,27 @@ from numpy.typing import NDArray
 if TYPE_CHECKING:
     from game import Game
 
-
 class Agent(ABC):
     legal_moves: List[NDArray]  # list of (x,y) values relative to position where piece can move
     legal_attacks: List[NDArray]    # list of (x,y) values relative to position where piece can attack
     player_id: int
+    hp: int
+    uid: UUID
 
-    def __init__(self, player_id: int, position: Tuple):
+    # Assigned in game, called by agent instance on death if not none
+    death_callback = None
+
+    def __init__(self, player_id, position, hp):
         self.player_id: int = player_id
         self.position: NDArray = np.array(position)  # (x, y) tuple
+        self.hp = hp
+
+        # Stable unique ID for debugging (persists for the object's lifetime)
+        self.uid = f"{self.__class__.__name__}_{uuid.uuid4().hex[:8]}"
+
+    def __repr__(self):
+        return f"<{self.uid} at {self.position}>"
+
 
     # For now, this doesn't need to be abstract because it's the same for all classes? 
     def possible_actions(self, game_state: Game) -> List[Tuple]:
@@ -43,20 +57,34 @@ class Agent(ABC):
 
         return actions
 
-    # TODO FIX: NOT CALLED FOR NOW, HANDLED IN GAME 
-    def act(self, game_state: Game, action: Tuple):
-        if action[0] == 'move': self.position = action[1]
-        elif action[0] == 'attack': game_state.get_occupied(*action[1]).take_damage(1)
-
     def move(self, new_pos: NDArray):
-        # Update the position?
-        print(new_pos)
         self.position = np.array(new_pos)
+    
+    def on_death(self):
+        print(f"[DEBUG] {self.uid} died at {self.position}")
+        if self.death_callback: self.death_callback(self)
+
+    def take_damage(self, amount):
+        if self.hp <= 0:
+            print('already dead!')
+            return  # Already dead
+        self.hp -= amount
+        print(f'{repr(self)} lost {amount} hp and now has {self.hp} hp')
+        if self.hp <= 0:
+            self.on_death()
+
+
 
 class Archer(Agent):
+    def __init__(self, player_id, position, hp=3):  
+        super().__init__(player_id, position, hp=hp)
+
     legal_moves: List[NDArray] = [np.array(x) for x in [(1,0), (-1,0), (0,1), (0,-1)]]
     legal_attacks: List[NDArray] = [np.array(x) for x in [(2,0), (-2,0), (0,2), (0,-2)]]
 
 class Warrior(Agent):
+    def __init__(self, player_id, position, hp=7):  
+        super().__init__(player_id, position, hp=hp)
+
     legal_moves: List[NDArray] = [np.array(x) for x in [(1,0), (-1,0), (0,1), (0,-1)]]
     legal_attacks: List[NDArray] = [np.array(x) for x in [(1,0), (-1,0), (0,1), (0,-1)]]
