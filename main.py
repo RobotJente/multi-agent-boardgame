@@ -1,3 +1,4 @@
+# %%
 import pygame
 from game import Game
 from agents import Archer, Warrior
@@ -41,3 +42,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# %%
