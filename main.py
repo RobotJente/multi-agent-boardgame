@@ -32,7 +32,7 @@ def main():
             1: {a1: a1.possible_actions(game)[0], w1: w1.possible_actions(game)[0]},
             2: {a2: a2.possible_actions(game)[0], w2: w2.possible_actions(game)[0]},
         }
-
+        game.players[1][0].take_damage(1)
         game.resolve_turn(player_actions)
         game.render(screen)
         pygame.display.flip()

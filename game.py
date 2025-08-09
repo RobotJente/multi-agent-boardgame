@@ -18,11 +18,20 @@ class Game:
 
     def add_agent(self, agent):
         x, y = agent.position
+        agent.death_callback = self.remove_agent  
         if not self.is_occupied(x, y):
             self.grid[y][x] = agent
             self.players[agent.player_id].append(agent)
         else:
             raise ValueError("Position already occupied")
+        
+    def remove_agent(self, agent):
+        x, y = agent.position
+        self.grid[y][x] = None
+        self.players[agent.player_id].remove(agent)
+        # Optionally: add to a graveyard log
+        print(f"[DEBUG] {agent.uid} died at {agent.position}")
+        print(f"[GAME] Removed {agent.uid} from the board")    
 
     def move_agent(self, agent, action):
         old_x, old_y = agent.position

@@ -1,9 +1,13 @@
 from abc import ABC, abstractmethod
+import uuid
 
 class Agent(ABC):
-    def __init__(self, player_id, position):
+    def __init__(self, player_id, position, hp):
         self.player_id = player_id
         self.position = position  # (x, y) tuple
+        self.hp = hp
+        # Stable unique ID for debugging (persists for the object's lifetime)
+        self.uid = f"{self.__class__.__name__}_{uuid.uuid4().hex[:8]}"
 
     @abstractmethod
     def possible_actions(self, game_state):
@@ -15,7 +19,29 @@ class Agent(ABC):
         """Update position or state based on action."""
         pass
 
+    def __repr__(self):
+        return f"<{self.uid} at {self.position}>"
+    
+    def on_death(self):
+        print(f"[DEBUG] {self.uid} died at {self.position}")
+        if self.death_callback:
+            self.death_callback(self)
+
+    def take_damage(self, amount):
+        if self.hp <= 0:
+            print('already dead!')
+            return  # Already dead
+        self.hp -= amount
+        print(f'{repr(self)} lost {amount} hp and now has {self.hp} hp')
+        if self.hp <= 0:
+            self.on_death()
+
+
+
 class Archer(Agent):
+    def __init__(self, player_id, position, hp=3):  
+        super().__init__(player_id, position, hp=hp)
+    
     def possible_actions(self, game_state):
         # Example: can move one cell in any direction or shoot (dummy action)
         actions = []
@@ -34,6 +60,10 @@ class Archer(Agent):
         # shooting handled elsewhere
 
 class Warrior(Agent):
+
+    def __init__(self, player_id, position, hp=7):  
+        super().__init__(player_id, position, hp=hp)
+
     def possible_actions(self, game_state):
         # Moves two cells orthogonally or attacks adjacent cell
         actions = []
